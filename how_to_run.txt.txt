@@ -1,0 +1,17 @@
+1.INSTALL NODE.JS IN WINDOWS
+
+2.Install mysql on windows...create server with password 1234
+
+3.run queries of the file "table creation query.sql"
+
+4.insert sample data of the fie "sample_data.sql"
+
+2.LOCATE TO THE FOLDER AND TYPE 'cmd' on the address
+(command prompt will appear)
+
+3.run the command "npm install"
+
+4.run the command "node server.js"
+
+
+
