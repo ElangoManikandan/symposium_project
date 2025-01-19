@@ -1,0 +1,48 @@
+<!-- index.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Symposium Home</title>
+    <style>
+        /* Add CSS styling here */
+        body { font-family: Arial, sans-serif; }
+        header { background: #4CAF50; color: white; padding: 1rem; text-align: center; }
+        nav ul { list-style: none; padding: 0; display: flex; justify-content: center; background: #333; }
+        nav ul li { margin: 0 1rem; }
+        nav ul li a { color: white; text-decoration: none; }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Welcome to PHANTASM'25</h1>
+        <p>Experience the Ultimate Symposium</p>
+    </header>
+    <nav>
+        <ul>
+            <li><a href="index.html">Home</a></li>
+            <li><a href="events.html">Events</a></li>
+            <li><a href="login.html">Login</a></li>
+            <li><a href="contact-us.html">Contact Us</a></li>
+        </ul>
+    </nav>
+    <main>
+        <section>
+            <h2>About the Symposium</h2>
+            <p>Join us for an exciting blend of technical and non-technical events, workshops, and networking opportunities.</p>
+        </section>
+        <section>
+            <h2>Highlights</h2>
+            <ul>
+                <li>Technical Events</li>
+                <li>Non-Technical Events</li>
+                <li>Workshops</li>
+            </ul>
+        </section>
+    </main>
+    <footer>
+        <p>&copy; 2024 PHANTASM'25 Symposium. All rights reserved.</p>
+    </footer>
+</body>
+</html>

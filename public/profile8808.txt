@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Profile</title>
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #f0f2f5;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .container {
+            background: #ffffff;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+            border-radius: 15px;
+            padding: 30px;
+            width: 90%;
+            max-width: 450px;
+            text-align: center;
+            transition: transform 0.3s ease-in-out;
+        }
+        .container:hover {
+            transform: translateY(-10px);
+        }
+        h1 {
+            color: #4b4f58;
+            margin-bottom: 20px;
+            font-size: 28px;
+        }
+        .profile-info {
+            text-align: left;
+            margin: 20px 0;
+            padding: 10px;
+            background-color: #f9f9f9;
+            border-radius: 8px;
+            box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        .profile-info p {
+            margin: 15px 0;
+            font-size: 18px;
+            color: #4b4f58;
+        }
+        .profile-info strong {
+            color: #007bff;
+            font-weight: 600;
+        }
+        #logoutButton, #editButton, #saveButton {
+            background-color: #007bff;
+            color: #ffffff;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 18px;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.3s;
+            margin-top: 20px;
+        }
+        #logoutButton:hover, #editButton:hover, #saveButton:hover {
+            background-color: #0056b3;
+            transform: translateY(-2px);
+        }
+        #logoutButton:active, #editButton:active, #saveButton:active {
+            transform: translateY(0);
+        }
+        .profile-avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background-color: #e4e6eb;
+            margin-bottom: 20px;
+            display: inline-block;
+            background-image: url('https://via.placeholder.com/80');
+            background-size: cover;
+            background-position: center;
+        }
+        input[type="text"], input[type="number"], select {
+            width: 100%;
+            padding: 8px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+            font-size: 16px;
+        }
+        input[type="text"]:focus, input[type="number"]:focus, select:focus {
+            border-color: #007bff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="profile-avatar"></div>
+        <h1>Welcome, <span id="userName">User</span>!</h1>
+        <div class="profile-info" id="profileDetails">
+            <p><strong>Name:</strong> <span id="name"></span></p>
+            <p><strong>College:</strong> <span id="college"></span></p>
+            <p><strong>Year:</strong> <span id="year"></span></p>
+            <p><strong>Accommodation:</strong> <span id="accommodation"></span></p>
+        </div>
+        <button id="editButton">Edit</button>
+        <button id="saveButton" style="display: none;">Save</button>
+        <button id="logoutButton">Logout</button>
+    </div>
+
+    <script>
+        let isEditing = false;
+
+        // Fetch user profile information on page load
+        document.addEventListener("DOMContentLoaded", async () => {
+            try {
+                const response = await fetch("/get-profile", { method: "GET" });
+                if (!response.ok) {
+                    alert("Failed to fetch profile details. Please log in again.");
+                    window.location.href = "/login.html";
+                    return;
+                }
+
+                const data = await response.json();
+                document.getElementById("userName").textContent = data.name;
+                document.getElementById("name").textContent = data.name;
+                document.getElementById("college").textContent = data.college;
+                document.getElementById("year").textContent = data.year;
+                document.getElementById("accommodation").textContent = data.accommodation;
+            } catch (error) {
+                console.error("Error fetching profile:", error);
+                alert("An error occurred. Please try again later.");
+            }
+        });
+
+        // Edit button handler
+        document.getElementById("editButton").addEventListener("click", () => {
+            if (isEditing) return;
+
+            isEditing = true;
+            document.getElementById("editButton").style.display = "none";
+            document.getElementById("saveButton").style.display = "inline-block";
+
+            // Replace the displayed details with input fields
+            const name = document.getElementById("name").textContent;
+            const college = document.getElementById("college").textContent;
+            const year = document.getElementById("year").textContent;
+            const accommodation = document.getElementById("accommodation").textContent;
+
+            document.getElementById("name").innerHTML = `<input type="text" id="editName" value="${name}" />`;
+            document.getElementById("college").innerHTML = `<input type="text" id="editCollege" value="${college}" />`;
+            document.getElementById("year").innerHTML = `<input type="number" id="editYear" value="${year}" />`;
+            document.getElementById("accommodation").innerHTML = `<input type="text" id="editAccommodation" value="${accommodation}" />`;
+        });
+
+        // Save button handler
+        document.getElementById("saveButton").addEventListener("click", async () => {
+            const name = document.getElementById("editName").value;
+            const college = document.getElementById("editCollege").value;
+            const year = document.getElementById("editYear").value;
+            const accommodation = document.getElementById("editAccommodation").value;
+
+            const updatedData = { name, college, year, accommodation };
+
+            try {
+                const response = await fetch("/update-profile", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(updatedData)
+                });
+
+                if (response.ok) {
+                    // Update the displayed profile with the new details
+                    document.getElementById("name").textContent = name;
+                    document.getElementById("college").textContent = college;
+                    document.getElementById("year").textContent = year;
+                    document.getElementById("accommodation").textContent = accommodation;
+
+                    // Exit editing mode
+                    isEditing = false;
+                    document.getElementById("editButton").style.display = "inline-block";
+                    document.getElementById("saveButton").style.display = "none";
+                } else {
+                    alert("Failed to save changes.");
+                }
+            } catch (error) {
+                console.error("Error updating profile:", error);
+                alert("An error occurred. Please try again later.");
+            }
+        });
+
+        // Handle logout
+        document.getElementById("logoutButton").addEventListener("click", () => {
+            // Clear session and redirect to login
+            fetch("/logout", { method: "POST" }).then(() => {
+                window.location.href = "/login.html";
+            });
+        });
+    </script>
+</body>
+</html>
