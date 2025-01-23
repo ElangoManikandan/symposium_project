@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Profile</title>
+    <script src="https://unpkg.com/html5-qrcode/minified/html5-qrcode.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        .container {
+            max-width: 600px;
+            margin: auto;
+            text-align: center;
+        }
+        input {
+            margin: 10px;
+            padding: 8px;
+            width: 90%;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .attendance-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        .attendance-table th, .attendance-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+        }
+        .attendance-table th {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Admin Profile</h1>
+        <p>Welcome, Admin!</p>
+
+        <!-- QR Code Scanner -->
+        <div id="reader" style="width: 300px; margin: auto;"></div>
+        <p>OR manually enter the QR code ID and Event ID below:</p>
+
+        <!-- Manual Input Section -->
+        <input type="text" id="manualQrCodeId" placeholder="Enter QR Code ID">
+        <input type="text" id="manualEventId" placeholder="Enter Event ID">
+        <button id="markAttendanceButton">Mark Attendance</button>
+
+        <!-- Attendance Records -->
+        <h2>Attendance Records</h2>
+        <table class="attendance-table" id="attendanceTable">
+            <thead>
+                <tr>
+                    <th>Participant Name</th>
+                    <th>Event Name</th>
+                    <th>Status</th>
+                    <th>Timestamp</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Attendance records will be populated dynamically -->
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        // Fetch and display attendance records
+        async function fetchAttendanceRecords() {
+            const response = await fetch('/admin/attendance');
+            const data = await response.json();
+
+            const attendanceTable = document.getElementById('attendanceTable').getElementsByTagName('tbody')[0];
+            attendanceTable.innerHTML = ""; // Clear previous records
+
+            data.forEach(record => {
+                const row = attendanceTable.insertRow();
+                row.insertCell(0).innerText = record.participant_name;
+                row.insertCell(1).innerText = record.event_name;
+                row.insertCell(2).innerText = record.attendance_status;
+                row.insertCell(3).innerText = record.marked_at;
+            });
+        }
+
+        // Mark attendance using the input fields
+        document.getElementById('markAttendanceButton').addEventListener('click', async () => {
+            const qrCodeId = document.getElementById('manualQrCodeId').value;
+            const eventId = document.getElementById('manualEventId').value;
+
+            if (!qrCodeId || !eventId) {
+                alert('Please enter both QR Code ID and Event ID.');
+                return;
+            }
+
+            try {
+                const response = await fetch('/mark-attendance', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ qr_code_id: qrCodeId, event_id: eventId }),
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    alert(result.message);
+                    fetchAttendanceRecords(); // Refresh attendance records
+                } else {
+                    alert(`Error: ${result.error}`);
+                }
+            } catch (err) {
+                console.error('Error:', err);
+                alert('Failed to mark attendance. Please try again.');
+            }
+        });
+
+        // Initialize QR code scanner
+        function onScanSuccess(decodedText) {
+            const qrCodeId = decodedText; // Use the decoded text as the QR Code ID
+            const eventId = prompt('Enter Event ID for attendance:');
+            if (!eventId) return;
+
+            fetch('/mark-attendance', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ qr_code_id: qrCodeId, event_id: eventId }),
+            })
+                .then(response => response.json())
+                .then(result => {
+                    if (response.ok) {
+                        alert(result.message);
+                        fetchAttendanceRecords();
+                    } else {
+                        alert(`Error: ${result.error}`);
+                    }
+                })
+                .catch(err => {
+                    console.error('Error:', err);
+                    alert('Failed to mark attendance. Please try again.');
+                });
+        }
+
+        const html5QrCode = new Html5Qrcode("reader");
+        html5QrCode.start(
+            { facingMode: "environment" },
+            { fps: 10, qrbox: 250 },
+            onScanSuccess
+        ).catch(err => console.error("Error starting QR scanner:", err));
+
+        // Fetch attendance records on page load
+        fetchAttendanceRecords();
+    </script>
+</body>
+</html>

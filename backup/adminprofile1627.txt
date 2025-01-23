@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Profile</title>
+    <!-- Updated script URL -->
+    <script src="https://cdn.jsdelivr.net/npm/html5-qrcode/minified/html5-qrcode.min.js"></script>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        .profile-section, .attendance-section {
+            margin-bottom: 20px;
+        }
+        .scanner-section {
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.scanner {
+    margin: 20px auto;
+    width: 180px;  /* Smaller width */
+    height: 180px; /* Smaller height */
+    border: 2px solid #007bff;
+    border-radius: 4px;
+}
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        th, td {
+            text-align: left;
+            padding: 10px;
+            border: 1px solid #ddd;
+        }
+        th {
+            background-color: #007bff;
+            color: white;
+        }
+        .btn {
+            display: inline-block;
+            padding: 10px 15px;
+            color: white;
+            background-color: #007bff;
+            text-decoration: none;
+            border-radius: 4px;
+            text-align: center;
+        }
+        .btn:hover {
+            background-color: #0056b3;
+        }
+        .logout {
+            text-align: center;
+            margin-top: 20px;
+        }
+        #scanStatus {
+            margin-top: 10px;
+            color: green;
+        }
+        video{
+            width:400px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Admin Profile</h1>
+
+        <!-- Admin Details Section -->
+        <div class="profile-section">
+            <h2>Admin Details</h2>
+            <table>
+                <tr>
+                    <th>Name</th>
+                    <td id="adminName">Loading...</td>
+                </tr>
+                <tr>
+                    <th>Email</th>
+                    <td id="adminEmail">Loading...</td>
+                </tr>
+                <tr>
+                    <th>College</th>
+                    <td id="adminCollege">Loading...</td>
+                </tr>
+            </table>
+        </div>
+
+        <!-- QR Code Scanner Section -->
+        <div class="scanner-section">
+            <h2>Scan QR Code to Mark Attendance</h2>
+            <div id="qrScanner" class="reader"></div>
+            <p id="scanStatus"></p>
+        </div>
+
+        <!-- Attendance Details Section -->
+        <div class="attendance-section">
+            <h2>Attendance Details</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Event Name</th>
+                        <th>Participant Name</th>
+                        <th>Attendance Status</th>
+                        <th>Marked At</th>
+                    </tr>
+                </thead>
+                <tbody id="attendanceTableBody">
+                    <tr>
+                        <td colspan="4" style="text-align: center;">Loading...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Logout Section -->
+        <div class="logout">
+            <a href="/logout" class="btn">Logout</a>
+        </div>
+    </div>
+
+    <script>
+    // Fetch Admin Details
+    fetch('/get-admin-profile')
+        .then(async (response) => {
+            try {
+                const data = await response.json();
+                if (data.error) {
+                    alert(data.error);
+                    return;
+                }
+
+                document.getElementById('adminName').textContent = data.name;
+                document.getElementById('adminEmail').textContent = data.email;
+                document.getElementById('adminCollege').textContent = data.college;
+            } catch (error) {
+                alert('Error fetching admin profile: Invalid response from the server.');
+                console.error(error);
+            }
+        })
+        .catch(error => {
+            alert('Error fetching admin profile. Please try again.');
+            console.error(error);
+        });
+
+    // Initialize the QR code scanner
+    const qrScanner = new Html5Qrcode("qrScanner");
+    const scanStatus = document.getElementById('scanStatus');
+
+    const markAttendance = (qrCodeMessage) => {
+        const qr_code_id = qrCodeMessage;
+        const event_id = prompt("Enter Event ID to mark attendance:");
+
+        if (!event_id) {
+            scanStatus.textContent = "Attendance marking cancelled.";
+            scanStatus.style.color = "red";
+            return;
+        }
+
+        fetch('/admin/mark-attendance', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ qr_code_id, event_id })
+        })
+            .then(async (response) => {
+                try {
+                    const result = await response.json();
+                    if (result.success) {
+                        scanStatus.textContent = "Attendance marked successfully!";
+                        scanStatus.style.color = "green";
+
+                        // Refresh attendance table
+                        fetchAttendanceDetails();
+                    } else {
+                        scanStatus.textContent = `Error: ${result.message}`;
+                        scanStatus.style.color = "red";
+                    }
+                } catch (error) {
+                    scanStatus.textContent = "Failed to mark attendance. Invalid server response.";
+                    scanStatus.style.color = "red";
+                    console.error(error);
+                }
+            })
+            .catch(error => {
+                scanStatus.textContent = "Failed to mark attendance. Please try again.";
+                scanStatus.style.color = "red";
+                console.error(error);
+            });
+    };
+
+    // Start scanning
+    qrScanner.start(
+        { facingMode: "environment" }, // Use back camera
+        { fps: 10, qrbox: { width: 150, height: 150 } }, // Smaller scanning area
+        (decodedText) => {
+            qrScanner.stop().then(() => { // Stop scanner after a successful read
+                markAttendance(decodedText);
+                qrScanner.start(); // Restart scanning after handling the QR code
+            }).catch(err => console.error("Error restarting scanner:", err));
+        },
+        (errorMessage) => {
+            console.warn(`QR Code Scanning Error: ${errorMessage}`);
+        }
+    ).catch((err) => {
+        console.error("Unable to start QR code scanner:", err);
+        scanStatus.textContent = "Unable to start scanner. Please try again.";
+        scanStatus.style.color = "red";
+    });
+
+    // Fetch attendance details
+    const fetchAttendanceDetails = () => {
+        fetch('/admin/attendance')
+            .then(async (response) => {
+                try {
+                    const data = await response.json();
+                    const attendanceTableBody = document.getElementById('attendanceTableBody');
+                    attendanceTableBody.innerHTML = '';
+
+                    data.forEach(record => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${record.event_name}</td>
+                            <td>${record.participant_name}</td>
+                            <td>${record.attendance_status}</td>
+                            <td>${new Date(record.marked_at).toLocaleString()}</td>
+                        `;
+                        attendanceTableBody.appendChild(row);
+                    });
+                } catch (error) {
+                    console.error('Error fetching attendance details: Invalid response from the server.', error);
+                }
+            })
+            .catch(error => console.error('Error fetching attendance details:', error));
+    };
+
+    // Initial fetch of attendance details
+    fetchAttendanceDetails();
+</script>
+
+    
+</body>
+</html>
