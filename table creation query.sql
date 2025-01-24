@@ -8,7 +8,8 @@ CREATE TABLE users (
     email VARCHAR(100) UNIQUE,
     password VARCHAR(255),
     accommodation ENUM('yes', 'no'),
-    role ENUM('user', 'admin') DEFAULT 'user'
+    role ENUM('user', 'admin') DEFAULT 'user',
+    qr_code_id VARCHAR(255) UNIQUE
 );
 CREATE TABLE events (
     id INT AUTO_INCREMENT PRIMARY KEY,
